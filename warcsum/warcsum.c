@@ -856,7 +856,7 @@ process_member (FILE* f_in, FILE* f_out, z_stream *z,
           strcpy (final_digest, ws->stored_digest);
         }
       strcpy (final_hash, ws->args.hash_char);
-      snprintf (ws->manifest, sizeof (ws->manifest), "%s %u %u %s %s %s:%s\n", ws->WARCFILE_NAME,
+      snprintf (ws->manifest, sizeof (ws->manifest), "%s %lu %lu %s %s %s:%s\n", ws->WARCFILE_NAME,
                 ws->START, ws->END - ws->START, ws->URI,
                 ws->DATE, final_hash, final_digest);
 
@@ -953,7 +953,7 @@ process_file (char *in, FILE* f_out, z_stream* z, struct warcsum_struct* ws)
             {
               fprintf (stderr, "Chunk size not sufficient\n"
                        "Doubling chunk size\n"
-                       "%u %u\n",
+                       "%lu %u\n",
                        ws->START, ws->effective_out);
             }
           short doubled = 0;
