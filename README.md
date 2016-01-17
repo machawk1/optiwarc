@@ -1,6 +1,9 @@
 Tools for deduplicating WARC files. Largely based on the tools
 built by the [Bibliotheca Alexandrina](https://github.com/arcalex) for this
-purpose, but modified for easier (or correct) use.
+purpose, but modified for easier (or correct) use. See
+[Youssef
+Eldakar's](http://netpreserve.org/sites/default/files/attachments/2015_IIPC-GA_Slides_16b_Eldakar.pdf)
+description of the tools for a little more information.
 
 ## Fixes/Changes
 
@@ -36,6 +39,11 @@ $ sudo make install
 $ cd ../warcrefs
 $ mvn package
 ```
+
+You may need to add the library install directory to your load path so warcsum
+and friends can find gzmulti:
+
+    export LD_LIBRARY_PATH=/usr/local/lib
 
 Now you can dedup. If you want to combine smaller WARCs into a big one, try
 `megawarc`.
