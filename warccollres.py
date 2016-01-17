@@ -114,14 +114,29 @@ def dedup_collisions(connection, warc_filename, digest, warc_offset, warc_len, u
     # Nothing else to do; just commit
     connection.commit()
 
+
+def dump_collres(out, connection):
+    c = connection.cursor()
+    c.execute('SELECT * FROM warcsums ORDER BY warc_offset')
+    for row in c:
+        (id, fname, offset, len, uri, datetime, digest, copy, ruri, rdate) = row
+        print(fname, offset, len, uri, datetime, digest, 0, copy, ruri, rdate,
+              file=out)
+
+
 if __name__ == '__main__':
     connection = sqlite3.connect('collres.db')
-
-    create_tables(connection)
-    print('Imported', import_warcsums(sys.stdin, connection), 'records')
+    if len(sys.argv) > 1:
+        create_tables(connection)
+        for in_file in sys.argv[1:]:
+            n = import_warcsums(open(in_file), connection)
+            print(in_file, ':', n, 'records imported')
 
     while True:
         params = find_possible_collision(connection)
         if params is None:
             break
         dedup_collisions(connection, *params)
+
+    print('Deduplication complete. Writing manifest to warccollres.txt')
+    dump_collres(open('warccollres.txt', 'w'), connection)
