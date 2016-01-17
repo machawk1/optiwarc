@@ -58,9 +58,9 @@ and which are not. This can take a while.
 
     python3 warccollres.py mega.warcsum
 
-It will import the digest file into a database (stored in `collres.db`), then go
-to work finding duplicates. If interrupted while finding duplicates, you can
-resume where it left off by running `warccollres.py` without any arguments.
+It will import the digest file into a database, then go to work finding
+duplicates. If interrupted while finding duplicates, you can resume where it
+left off by running `warccollres.py` without any arguments.
 
 When finished, it will write the manifest back out with duplicate pointers to
 `warccollres.txt`.  Then we run `warcrefs` to rewrite the WARC.
@@ -68,6 +68,22 @@ When finished, it will write the manifest back out with duplicate pointers to
     java -jar warcrefs/target/warcrefs-1.0-SNAPSHOT-jar-with-dependencies.jar \
         8129 warccollres.txt `pwd`
 
-..and hopefully that's it. Hacking `warccollres` to use MySQL or your favorite
-DBMS might be a good way to improve performance, since sqlite tends to be rather
-slow.
+..and hopefully that's it.
+
+---
+
+For performance reasons `warccollres` uses
+[`mysqlclient`](https://github.com/PyMySQL/mysqlclient-python), which implies
+you need a database server for it. Configure connection information in
+`MYSQL_PARAMS`. You'll want to ensure the database server is configured for
+reasonable performance. In particular, ensure `innodb_buffer_pool_size` is
+large. Ideally, at least as large as your dataset so it can all live in RAM.
+The code doesn't create any indexes, but it's probably advisable since there's a
+lot of sorting and searching involved.
+
+    CREATE INDEX digest on warcsums(digest(32));
+    CREATE INDEX warc_offset on warcsums(warc_offset);
+
+You can use sqlite too, but the queries in the code will need rewriting since
+the dialects used are incompatible and it tends to be painfully slow when
+writing.
