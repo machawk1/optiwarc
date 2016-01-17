@@ -101,12 +101,12 @@ struct warcsum_struct
   int response;
   int computed_hash;
   int stored_hash;
-  unsigned int START;
-  unsigned int END;
+  off_t START;
+  off_t END;
   unsigned int effective_in;
   unsigned int effective_out;
   int need_double;
-  char last_4[4];
+  unsigned char last_4[4];
   int size_last_4;
   char WARCFILE_NAME[FILE_NAME_LENGTH];
   char *URI;
