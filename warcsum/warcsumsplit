@@ -1,0 +1,293 @@
+#! /usr/bin/perl
+
+# Copyright (C) 2015 Bibliotheca Alexandrina
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# warcsumsplit takes a large hash manifest file and number of partitions
+# as input, and attempts to split the large hash manifest file into
+# number of smaller hash manifest files equal to or less than the input
+# number of parititons.
+#
+# warcsumsplit will never break a sequence of hash manifests with the
+# same hash, which might produce uneven parition.
+
+# Input 
+#
+# Large hash manifest sorted on the hash with the following format:
+# <WARC filename> <member offset> <member end> <URI> <date> <hash digest>
+
+# Output 
+#
+# Smaller hash manifest files sorted on the hash with the following
+# format:
+#
+# <WARC filename> <member offset> <member end> <URI> <date> <hash digest>
+
+use strict;
+use warnings;
+use Getopt::Long qw(:config bundling);
+use Data::Dumper qw(Dumper);
+
+my $input_filename = "";
+my $partition_count = 0;
+my $partition_size = "";
+my $quiet;
+my $version;
+my $help;
+
+###############################
+# Parse the program's options #
+###############################
+GetOptions ("i|input=s" => \$input_filename, # input filename
+    "c|count=i" => \$partition_count, # number of required partitions
+    "s|size=s" => \$partition_size, # size of required partitions
+    "V|version" => \$version, # print the version
+    "h|help" => \$help, # print the version
+    "q|quiet" => \$quiet) # quiet mode
+or die("Usage: warcsumsplit.pl [-i | --input <input_file>] ",
+    "[-c | --count <number_of_partitions>] [-s | --partition-size] ",
+    "[-q | --quiet]");
+
+if($version)
+{
+  print "GNU warccollres 0.1\n",
+        " * Copyright (C) 2015 Bibliotheca Alexandrina\n";
+  exit 0;
+}
+
+if($help)
+{
+  print "Usage:\n",
+        "\twarccollres [-i <filename>] [-s <output partition size>]\n",
+        "\twarccollres [-i <filename>] [-c <number of partitions>]\n";
+
+  print "Options:\n",
+        "\t-i, --input=FILE\n",
+        "\t\tPath to input digests manifest file.\n";
+
+  print "\t-s, --size=NUMBER\n",
+        "\t\tDesired size for each of the output files.\n";
+
+  print "\t-c, --count=NUMBER\n",
+        "\t\tDesired number of partitions.\n";
+  
+  print "\t-q, --quiet\n",
+        "\t\tDo not produce any messages..\n";
+  
+  print "\t-v, --version\n",
+        "\t\tPrint the version.\n";
+  
+  print "\t-h, --help\n",
+        "\t\tPrint this message.\n";
+  
+  exit 0;
+}
+
+unless(-e $input_filename)
+{
+  die "Error: input file $input_filename does not exist.";
+}
+
+unless(-r $input_filename)
+{
+  die "Error: input file $input_filename is not readable.";
+}
+
+if($partition_size eq "" && $partition_count !~ /^[+]?\d+\z/ &&
+$partition_count == 0)
+{
+  die "Error: $partition_count is an invalid number of split counts.";
+}
+elsif($partition_count == 0 && $partition_size ne "" and
+$partition_size !~ /^[+]?\d+[KMG]?\z/)
+{
+  die "Error: $partition_size is an invalid number of split counts.";
+}
+
+my $input_size = -s $input_filename
+or die "Error: input file $input_filename is empty.";
+
+if($partition_size ne "")
+{
+  no warnings;
+  use Switch;
+  switch(my $unit = substr $partition_size, -1)
+  {
+    case "K"
+    {
+      chomp $partition_size;
+      $partition_size = $partition_size * 1024;
+    }
+    case "M"
+    {
+      chomp $partition_size;
+      $partition_size = $partition_size * 1024 * 1024;
+    }
+    case "G"
+    {
+      chomp $partition_size;
+      $partition_size = $partition_size * 1024 * 1024 * 1024;
+    }
+  }
+}
+
+########################################################
+# Calculate the approximate indices for the partitions #
+########################################################
+
+my @partition_index;
+
+$partition_index[0] = 0;
+
+if($partition_size eq "" and $partition_count == 0)
+{
+  my $i = 0;
+
+  while($partition_index[$i] < $input_size)
+  {
+    $partition_index[$i + 1] = $partition_index[$i] + $partition_size;
+    $i++;
+  }
+}
+else
+{
+  for my $i (1 .. $partition_count)
+  {
+    use integer;
+    $partition_index[$i] = $input_size / $partition_count * $i;
+  }
+}
+
+$partition_index[$#partition_index] = $input_size;
+
+open(my $input, "<", $input_filename)
+or die "Error: cannot open $input_filename for reading: $!";
+
+###########################################################
+# Calculate the real indices for the partitions based on  # 
+# the input file and duplicates at each approximate index #
+###########################################################
+my @real_partition_index;
+
+$real_partition_index[0] = 0;
+
+for  my $i (1 .. $#partition_index - 1)
+{
+  if($partition_index[$i] <=
+      $real_partition_index[$#real_partition_index])
+  {
+    next;
+  }
+  seek($input, $partition_index[$i], 0);
+
+  my $line = <$input>;
+
+  ##########################################
+  # If the last index was at the last line #
+  # in the input file, exit the loop       #
+  ##########################################
+  if(eof($input))
+  {
+    last;
+  }
+
+  defined($line = <$input>)
+  or last;
+
+  my $hash = (split(' ', $line))[-1];
+
+  my $hash2 = $hash;
+
+  my $line2 = "";
+
+  my $current_pos = tell($input);
+
+  $real_partition_index[$#real_partition_index + 1] = $current_pos;
+
+  while($hash eq $hash2 and defined($line2 = <$input>))
+  {
+    $real_partition_index[$#real_partition_index] = $current_pos;
+    $current_pos = tell($input);
+    $hash2 = (split(' ', $line2))[-1];
+  } 
+
+}
+
+unless($real_partition_index[$#real_partition_index] == $input_size)
+{
+  $real_partition_index[$#real_partition_index + 1] = $input_size;
+}
+
+#########################################
+# Copy each partition to a separate file #
+#########################################
+for my $i (1 .. $#real_partition_index)
+{
+  seek($input, $real_partition_index[$i - 1], 0);
+
+  open(my $output, ">", "$input_filename.$i")
+    or die "Error: cannot open $input_filename for reading: $!";
+
+  my $read;
+
+  while(defined($read = <$input>) and $real_partition_index[$i] >=
+  tell($input))
+  {
+    print $output $read;
+  }
+
+  close($output)
+    or warn "Error: Unable to close the input file $input_filename.$i: $!";
+  unless($quiet)
+  {
+    my $format_part_size = $real_partition_index[$i] -
+    $real_partition_index[$i - 1];
+    
+    if($format_part_size > 1 * 1024 * 1024 * 1024)
+    {
+      $format_part_size /= 1024 * 1024 * 1024;
+      $format_part_size = sprintf "%.2f", $format_part_size;
+      $format_part_size = "$format_part_size GiB";
+    }
+    elsif($format_part_size > 1 * 1024 * 1024)
+    {
+      $format_part_size /= 1024 * 1024;
+      $format_part_size = sprintf "%.2f", $format_part_size;
+      $format_part_size = "$format_part_size MiB";
+    }
+    elsif($format_part_size > 1 * 1024)
+    {
+      $format_part_size /= 1024;
+      $format_part_size = sprintf "%.2f", $format_part_size;
+      $format_part_size= "$format_part_size KiB";
+    }
+    else
+    {
+      $format_part_size= "$format_part_size Bytes";
+    }
+
+    print STDERR "$input_filename.$i size is: $format_part_size\n";
+  }
+}
+
+unless($quiet)
+{
+  print STDERR "Total number of partitions is: $#real_partition_index\n"
+}
+
+close($input)
+  or warn "Error: Unable to close the input file $input_filename: $!";
+
+exit 0;
