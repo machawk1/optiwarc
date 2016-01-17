@@ -112,10 +112,10 @@ public class Deduplicator
                 FileOutputStream warcOutputStream = new FileOutputStream( 
                         warcDedupAbsolutePath );
                 
-                int preOffset = 0;
-                int preLength = 0;
-                int offset = 0;
-                int length = 0;
+                long preOffset = 0;
+                long preLength = 0;
+                long offset = 0;
+                long length = 0;
                 
                 for( String record: warcRecords )
                 {
@@ -124,15 +124,15 @@ public class Deduplicator
                     
                     if ( copyNumber > 1 )
                     {
-                        offset = Integer.parseInt( digestLine[ 1 ] );
-                        length = Integer.parseInt( digestLine[ 2 ] );
+                        offset = Long.parseLong( digestLine[ 1 ] );
+                        length = Long.parseLong( digestLine[ 2 ] );
                         
                         /* Check whether there are bytes between current
                          *  response record and previous one. If so, we have to
                          *  copy them as they are to the new dedup_warc
                         */
-                        int skippedBytesOffset = preLength + preOffset;
-                        int skippedBytesLength = offset - skippedBytesOffset;
+                        long skippedBytesOffset = preLength + preOffset;
+                        long skippedBytesLength = offset - skippedBytesOffset;
                         
                         if ( skippedBytesLength > 0 )
                         {
@@ -179,8 +179,7 @@ public class Deduplicator
                 long lastRecordLength = warcSize - lengthRead;
                 
                 if (lastRecordLength > 0)
-                    copyWarcBytes( warcInputStream, warcOutputStream,
-                            ( int ) lastRecordLength );
+                    copyWarcBytes( warcInputStream, warcOutputStream, lastRecordLength );
                 
                 // Release resources for garbage collection
                 warcInputStream.close();
@@ -195,7 +194,7 @@ public class Deduplicator
     }
     
     private void writeRevisitRecord( FileInputStream fis, FileOutputStream fos,
-            int offset, String refersToUriStr, String refersToDateStr )
+            long offset, String refersToUriStr, String refersToDateStr )
             throws IOException
     {    
         WarcReader wrc = new WarcReaderCompressed();
@@ -243,7 +242,7 @@ public class Deduplicator
     }
     
     private void copyWarcBytes( FileInputStream fis, FileOutputStream fos,
-            int length) throws IOException
+            long length) throws IOException
     {
         while ( length > bufferSize )
         {
