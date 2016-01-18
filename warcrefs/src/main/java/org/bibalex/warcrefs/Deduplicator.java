@@ -203,6 +203,7 @@ public class Deduplicator
         fis = new FileInputStream( currentWarc );
         fis.skip( offset );
         WarcRecord record = wrc.getNextRecordFrom( fis, offset );
+        fis.close();
         
         /* Create a new warc record and write it into output warc file.
            Don't modify existing warc record. This will not work!
