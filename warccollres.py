@@ -134,7 +134,9 @@ def dump_collres(out, connection):
     c.execute('SELECT * FROM warcsums ORDER BY warc_offset')
     for row in c:
         (id, fname, offset, len, uri, datetime, digest, copy, ruri, rdate) = row
-        print(fname, offset, len, uri, datetime, digest, 0, copy, ruri, rdate,
+        print(fname.decode(), offset, len, uri.decode(),
+              datetime.decode(), digest.decode(), 0, copy,
+              ruri.decode() if ruri else None, rdate.decode() if rdate else None,
               file=out)
 
 
