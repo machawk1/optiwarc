@@ -78,11 +78,9 @@ you need a database server for it. Configure connection information in
 `MYSQL_PARAMS`. You'll want to ensure the database server is configured for
 reasonable performance. In particular, ensure `innodb_buffer_pool_size` is
 large. Ideally, at least as large as your dataset so it can all live in RAM.
-The code doesn't create any indexes, but it's probably advisable since there's a
-lot of sorting and searching involved.
 
-    CREATE INDEX digest on warcsums(digest(32));
-    CREATE INDEX warc_offset on warcsums(warc_offset);
+The code will automatically create indexes after importing data, but somebody
+more skilled with SQL than I am might be able to improve that.
 
 You can use sqlite too, but the queries in the code will need rewriting since
 the dialects used are incompatible and it tends to be painfully slow when
