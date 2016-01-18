@@ -188,7 +188,7 @@ public class Deduplicator
             }
             catch ( Exception e )
             {
-                System.err.println( e.getMessage() );
+                e.printStackTrace();
             }
         }
     }
@@ -232,11 +232,13 @@ public class Deduplicator
         warcHeader.header.warcRefersToDateStr = refersToDateStr;
         warcHeader.header.warcRecordIdUri = record.header.warcRecordIdUri;
         warcHeader.header.contentType = record.header.contentType;
-        warcHeader.header.contentLength = ( long ) httpHeaderStr.length();
+
+        byte[] httpHeaderBytes = httpHeaderStr.getBytes();
+        warcHeader.header.contentLength = (long)httpHeaderBytes.length;
         
         // Write warc header and http header
         ww.writeHeader( warcHeader );
-        ww.writePayload( httpHeaderStr.getBytes() );
+        ww.writePayload( httpHeaderBytes );
         
         ww.closeRecord();
     }
@@ -244,9 +246,9 @@ public class Deduplicator
     private void copyWarcBytes( FileInputStream fis, FileOutputStream fos,
             long length) throws IOException
     {
+        byte[] data = new byte [ bufferSize ];
         while ( length > bufferSize )
         {
-            byte[] data = new byte [ bufferSize ];
             
             fis.read( data, 0, bufferSize );
             fos.write( data, 0, bufferSize );
@@ -254,8 +256,7 @@ public class Deduplicator
             length = length - bufferSize;
         }
         
-        byte[] data = new byte [ length ];    
-        int len = fis.read( data, 0, length );
+        int len = fis.read( data, 0, (int)length );
         fos.write( data, 0, len );
     }
     
