@@ -53,6 +53,12 @@ def import_warcsums(f, connection):
     c.execute('SELECT COUNT(DISTINCT warc_filename) FROM warcsums')
     count = c.fetchone()
     assert count is not None and count[0] == 1, "Must refer to only one file"
+
+    # Create indexes now that we've imported everything
+    c.execute('CREATE INDEX digest ON warcsums(digest(32))')
+    c.execute('CREATE INDEX warc_offset ON warcsums(warc_offset)')
+    c.execute('CREATE INDEX copy_offset ON warcsums(copy_number, warc_offset)')
+    connection.commit()
     return n_imports
 
 
