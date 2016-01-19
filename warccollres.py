@@ -38,7 +38,12 @@ def import_warcsums(f, connection):
     cursor = connection.cursor()
     n_imports = 0
     for line in f:
-        (warc_filename, warc_offset, warc_len, uri, datetime, digest) = line.split()
+        try:
+            (warc_filename, warc_offset, warc_len, uri, datetime, digest) = line.split()
+        except ValueError:
+            print('At line', n_imports)
+            print(line)
+            raise
         cursor.execute('INSERT INTO warcsums ' +
                        '(warc_filename, warc_offset, warc_len,' +
                        ' uri, datetime, digest) ' +
