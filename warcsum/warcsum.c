@@ -856,6 +856,8 @@ process_member (FILE* f_in, FILE* f_out, z_stream *z,
           strcpy (final_digest, ws->stored_digest);
         }
       strcpy (final_hash, ws->args.hash_char);
+
+      // Write to digests file
       fprintf(f_out, "%s %lu %lu %s %s %s:%s\n", ws->WARCFILE_NAME,
               ws->START, ws->END - ws->START, ws->URI,
               ws->DATE, final_hash, final_digest);
@@ -865,9 +867,6 @@ process_member (FILE* f_in, FILE* f_out, z_stream *z,
                   ws->START, ws->END - ws->START, ws->URI,
                   ws->DATE, final_hash, final_digest);
       }
-
-      // write digest to digests file
-      fwrite (ws->manifest, 1, strlen (ws->manifest), f_out);
 
       free (ws->URI);
       return 0;

@@ -37,21 +37,24 @@ def create_tables(connection):
 def import_warcsums(f, connection):
     cursor = connection.cursor()
     n_imports = 0
-    for line in f:
-        try:
-            (warc_filename, warc_offset, warc_len, uri, datetime, digest) = line.split()
-        except ValueError:
-            print('At line', n_imports)
-            print(line)
-            raise
-        cursor.execute('INSERT INTO warcsums ' +
-                       '(warc_filename, warc_offset, warc_len,' +
-                       ' uri, datetime, digest) ' +
-                       'VALUES (%s, %s, %s, %s, %s, %s)',
-                       (warc_filename, warc_offset, warc_len,
-                        uri, datetime, digest))
-        n_imports += 1
-    connection.commit()
+    try:
+        for line in f:
+            n_imports += 1
+            try:
+                (warc_filename, warc_offset, warc_len, uri, datetime, digest) = line.split()
+            except ValueError:
+                print('Invalid line format', line)
+                raise
+            cursor.execute('INSERT INTO warcsums ' +
+                           '(warc_filename, warc_offset, warc_len,' +
+                           ' uri, datetime, digest) ' +
+                           'VALUES (%s, %s, %s, %s, %s, %s)',
+                           (warc_filename, warc_offset, warc_len,
+                            uri, datetime, digest))
+        connection.commit()
+    except Exception:
+        print('At line', n_imports)
+        raise
 
     # Assert that all records are part of the same WARC file
     c = connection.cursor()
