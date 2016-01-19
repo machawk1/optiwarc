@@ -856,14 +856,15 @@ process_member (FILE* f_in, FILE* f_out, z_stream *z,
           strcpy (final_digest, ws->stored_digest);
         }
       strcpy (final_hash, ws->args.hash_char);
-      snprintf (ws->manifest, sizeof (ws->manifest), "%s %lu %lu %s %s %s:%s\n", ws->WARCFILE_NAME,
-                ws->START, ws->END - ws->START, ws->URI,
-                ws->DATE, final_hash, final_digest);
+      fprintf(f_out, "%s %lu %lu %s %s %s:%s\n", ws->WARCFILE_NAME,
+              ws->START, ws->END - ws->START, ws->URI,
+              ws->DATE, final_hash, final_digest);
 
-      if (ws->args.verbose == 2)
-        {
-          fprintf (stderr, "%s\n", ws->manifest);
-        }
+      if (ws->args.verbose == 2) {
+          fprintf(stderr, "%s %lu %lu %s %s %s:%s\n", ws->WARCFILE_NAME,
+                  ws->START, ws->END - ws->START, ws->URI,
+                  ws->DATE, final_hash, final_digest);
+      }
 
       // write digest to digests file
       fwrite (ws->manifest, 1, strlen (ws->manifest), f_out);
