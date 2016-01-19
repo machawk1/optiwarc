@@ -1356,7 +1356,6 @@ help ()
 int
 main (int argc, char **argv)
 {
-    fprintf(stderr, "sizeof(long) = %li", sizeof(long));
   struct warcsum_struct ws;
   process_args (argc, argv, &ws.args);
   FILE* f_out;
