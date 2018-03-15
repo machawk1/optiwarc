@@ -40,6 +40,15 @@ $ cd ../warcrefs
 $ mvn package
 ```
 
+The following libraries will likely be required, in addition to a working C
+compiler (install `build-essential` on Debian-like Linux distributions):
+
+ * zlib (zlib1g-dev package on Debian, Ubuntu or similar Linux distributions)
+ * openssl (libssl-dev)
+ * mysqlclient (libmysqlclient-dev)
+ * curl (libcurl4-openssl-dev)
+ * libconfig (libconfig-dev)
+
 You may need to add the library install directory to your load path so warcsum
 and friends can find gzmulti:
 
