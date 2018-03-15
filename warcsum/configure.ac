@@ -12,24 +12,16 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lgzmulti':
-AC_CHECK_LIB([gzmulti], [main])
-# FIXME: Replace `main' with a function in `-lcrypto':
-AC_CHECK_LIB([crypto], [main])
-# FIXME: Replace `main' with a function in `-lcurl':
-AC_CHECK_LIB([curl], [main])
-# FIXME: Replace `main' with a function in `-ldl':
-AC_CHECK_LIB([dl], [main])
-# FIXME: Replace `main' with a function in `-lm':
-AC_CHECK_LIB([m], [main])
-# FIXME: Replace `main' with a function in `-lmysqlclient':
-AC_CHECK_LIB([mysqlclient], [main])
-# FIXME: Replace `main' with a function in `-lpthread':
-AC_CHECK_LIB([pthread], [main])
-# FIXME: Replace `main' with a function in `-lrt':
-AC_CHECK_LIB([rt], [main])
-# FIXME: Replace `main' with a function in `-lconfig':
-AC_CHECK_LIB([config], [main])
+AC_CHECK_LIB([gzmulti], [gzmInflateInit])
+AC_CHECK_LIB([crypto], [MD5_Init])
+AC_CHECK_LIB([curl], [curl_version])
+AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([m], [logf])
+AC_CHECK_LIB([mysqlclient], [mysql_close])
+AC_CHECK_LIB([pthread], [pthread_mutex_init])
+AC_CHECK_LIB([rt], [sched_yield])
+AC_CHECK_LIB([config], [config_destroy])
+AC_CHECK_LIB([z], [inflateReset2])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
